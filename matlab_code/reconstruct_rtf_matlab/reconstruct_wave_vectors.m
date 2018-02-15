@@ -1,0 +1,36 @@
+function [ wave_vectors ] = reconstruct_wave_vectors ...
+    (residual, wave_number, ANGLES, c, MES_X, MES_T, TIME_MOMENTS, ...
+    RECEIVER_NUMBER)
+r = real(wave_number);
+% samples on a quater of a sphere
+wave_dictionary = [r*sin(ANGLES(:,1)).*cos(ANGLES(:,2)) ...
+                   r*sin(ANGLES(:,1)).*sin(ANGLES(:,2)) ...
+                   r*cos(ANGLES(:,1))];
+% ensure the axial and tangential modes are sampled densely enough
+for i = 0:(pi/2/50):(pi/2)
+    wave_dictionary = [wave_dictionary; ...
+        r*[sin(i), cos(i), 0]; ...
+        r*[0, sin(i), cos(i)]; ...
+        r*[cos(i), 0, sin(i)]];
+end
+wave_dictionary = union(wave_dictionary, wave_dictionary, 'rows');
+wave_dictionary = sortrows(wave_dictionary, [1, 2, 3]);
+%% structured sparsity - prallelepiped inscribed into a sphere
+expansion_sum = zeros(size(wave_dictionary, 1), 1);
+for i = 1:size(wave_dictionary, 1)                        % for every sample on the sphere
+    current_plane_wave = wave_dictionary(i, :);
+    [dictionary_plane_waves] = get_plane_wave_dictionary( ...
+        current_plane_wave, wave_number, c, MES_X, MES_T, ...
+        TIME_MOMENTS, RECEIVER_NUMBER);
+    [R, ~] = matching_pursuit(residual, dictionary_plane_waves, ...
+        size(dictionary_plane_waves,2));
+    expansion_sum(i) = norm(R, 'fro');
+end
+[~, index] = min(expansion_sum);
+coeffmat = [1 1 1; 1 1 -1; 1 -1 1; -1 1 1];
+coeffmat = [coeffmat; -coeffmat];
+fprintf(1, 'Non-negative wave vector coordinates: [%.3f, %.3f, %.3f]\n', ...
+    wave_dictionary(index,1), wave_dictionary(index,2), wave_dictionary(index,3))
+wave_vectors = coeffmat.*repmat(wave_dictionary(index,:),8,1);
+wave_vectors = union(wave_vectors, wave_vectors, 'rows');
+end
