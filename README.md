@@ -1,9 +1,9 @@
 # JOINT ESTIMATION OF ROOM GEOMETRY AND MODES
 
-Here you can find framework for retrieving room shape and modes from microphone measurements.
+Here you can find a framework for retrieving room shape and modes from microphone measurements.
 We use a combination of the following techniques:
 1. curve fitting based on rational fraction polynomial method
-2. sampling on the sphere close to oniform
+2. sampling on the sphere close to uniform
 3. matching pursuit
 4. group sparsity
 5. compressed sensing
